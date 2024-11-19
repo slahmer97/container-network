@@ -1,0 +1,23 @@
+all:
+  hosts:
+    worker1:
+      ansible_host: c240g5-110103.wisc.cloudlab.us
+      ansible_user: sa_lamer
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      cluster_ip: 192.168.55.2
+    worker2:
+      ansible_host: c240g5-110207.wisc.cloudlab.us
+      ansible_user: sa_lamer
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      cluster_ip: 192.168.55.3
+    worker3:
+      ansible_host: c240g5-110119.wisc.cloudlab.us
+      ansible_user: sa_lamer
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      cluster_ip: 192.168.55.4
+  children:
+    workers:
+      hosts:
+        worker1:
+        worker2:
+        worker3:

@@ -1,0 +1,4 @@
+advertise_ip: "192.168.55.1"
+control_plane_endpoint: "192.168.55.1:6443"
+token: mt3859.h5smil9gbprvrsry
+ca_cert_hash: sha256:580adf4341b4954f971d896c9e5acabd4a7c15e0c229a108fbfaa57d7ae11969

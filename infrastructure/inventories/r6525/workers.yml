@@ -1,0 +1,19 @@
+all:
+  hosts:
+    worker1:
+      ansible_host: clnode299.clemson.cloudlab.us
+      ansible_user: sa_lamer
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      cluster_ip: 192.168.55.2
+    worker2:
+      ansible_host: clnode308.clemson.cloudlab.us
+      ansible_user: sa_lamer
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      cluster_ip: 192.168.55.3
+  children:
+    workers:
+      hosts:
+        worker1:
+        worker2:
+        #worker3:
+        #worker4:

@@ -1,0 +1,35 @@
+- name: Set up system requirements
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Remove conflicting container runtime packages
+      apt:
+        name:
+          - docker.io
+          - docker-doc
+          - docker-compose
+          - docker-compose-v2
+          - podman-docker
+          - containerd
+          - runc
+
+        state: absent
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker.io
+          - python3-pip
+        state: present
+
+    - name: Enable and start Docker service
+      systemd:
+        name: docker
+        enabled: yes
+        state: started

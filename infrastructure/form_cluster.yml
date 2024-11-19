@@ -1,0 +1,119 @@
+- name: Form the K8S cluster
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Remove existing Kubernetes APT keyring if it exists
+      file:
+        path: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        state: absent
+
+    - name: Download and add Kubernetes APT repository key
+      shell: |
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+
+    - name: Add Kubernetes APT repository
+      shell: |
+        echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+    - name: Update apt cache after adding kubernetes repository
+      apt:
+        update_cache: yes
+
+    - name: Install Kubernetes components (Kubeadm, Kubelet, Kubectl stable:v1.30)
+      apt:
+        name:
+          - kubeadm
+          - kubelet
+          - kubectl
+
+
+    - name: Hold Kubernetes components at current version
+      shell: |
+        sudo apt-mark hold kubeadm kubelet kubectl
+
+
+    - name: Disable swap
+      command: swapoff -a
+
+    - name: Comment out swap entry in /etc/fstab
+      replace:
+        path: /etc/fstab
+        regexp: '^(\s*[^#\s]+\s+[^#\s]+\s+swap\s+)'
+        replace: '#\1'
+
+    - name: Ensure necessary kernel modules are loaded at boot
+      copy:
+        dest: /etc/modules-load.d/containerd.conf
+        content: |
+          overlay
+          br_netfilter
+
+    - name: Load kernel modules
+      modprobe:
+        name: "{{ item }}"
+      with_items:
+        - overlay
+        - br_netfilter
+
+    - name: Configure sysctl for Kubernetes networking
+      copy:
+        dest: /etc/sysctl.d/kubernetes.conf
+        content: |
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.bridge.bridge-nf-call-iptables = 1
+          net.ipv4.ip_forward = 1
+
+    - name: Apply sysctl settings
+      command: sysctl --system
+
+    - name: Set Kubelet extra args
+      lineinfile:
+        path: /etc/default/kubelet
+        line: 'KUBELET_EXTRA_ARGS="--cgroup-driver=cgroupfs"'
+
+    - name: Configure Docker daemon
+      copy:
+        dest: /etc/docker/daemon.json
+        content: |
+          {
+            "exec-opts": ["native.cgroupdriver=systemd"],
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "100m"
+            },
+            "storage-driver": "overlay2"
+          }
+
+    - name: Restart Docker and Kubelet
+      systemd:
+        name: "{{ item }}"
+        state: restarted
+      with_items:
+        - docker
+        - kubelet
+
+
+#---
+#- hosts: master
+#  become: yes
+#  tasks:
+#    - name: Initialize Kubernetes master node
+#      command: >
+#        kubeadm init --control-plane-endpoint=192.168.55.1 --upload-certs
+#      args:
+#        creates: /etc/kubernetes/admin.conf
+
+    #- name: Set up kubeconfig for the master user
+    #  command: >
+    #    mkdir -p $HOME/.kube &&
+    #    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config &&
+    #    sudo chown $(id -u):$(id -g) $HOME/.kube/config
+    #  environment:
+    #    HOME: "/home/sa_lamer"
+
+    #- name: Apply Calico CNI plugin
+    #  command: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/release-v3.28/manifests/calico.yaml
+    #  environment:
+    #    KUBECONFIG: "/home/sa_lamer/.kube/config"

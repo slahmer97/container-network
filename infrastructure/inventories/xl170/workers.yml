@@ -1,0 +1,29 @@
+all:
+  hosts:
+    worker1:
+      ansible_host: hp065.utah.cloudlab.us
+      ansible_user: sa_lamer
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      cluster_ip: 192.168.55.2
+    worker2:
+      ansible_host: hp067.utah.cloudlab.us
+      ansible_user: sa_lamer
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      cluster_ip: 192.168.55.3
+    worker3:
+      ansible_host: hp075.utah.cloudlab.us
+      ansible_user: sa_lamer
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      cluster_ip: 192.168.55.4
+    worker4:
+      ansible_host: hp064.utah.cloudlab.us
+      ansible_user: sa_lamer
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      cluster_ip: 192.168.55.5
+  children:
+    workers:
+      hosts:
+        worker1:
+        worker2:
+        worker3:
+        worker4:

@@ -1,0 +1,30 @@
+- hosts: workers
+  vars_files:
+    - inventories/vars.yml
+  become: yes
+  tasks:
+    - name: Debug variables
+      debug:
+        msg:
+          - "advertise_ip: {{ advertise_ip }}"
+          - "control_plane_endpoint: {{ control_plane_endpoint }}"
+          - "cluster_ip: {{ hostvars[inventory_hostname].cluster_ip }}"
+
+    - name: Create or overwrite kubeadm InitConfiguration with dynamic node-ip, control plane endpoint, and advertise IP
+      ansible.builtin.copy:
+        dest: /etc/kubernetes/kubeadm-config.yaml
+        content: |
+          apiVersion: kubeadm.k8s.io/v1beta3
+          kind: JoinConfiguration
+          discovery:
+            bootstrapToken:
+              apiServerEndpoint: {{ control_plane_endpoint }}
+              token: {{ token }}
+              caCertHashes:
+                - {{ca_cert_hash}}
+          nodeRegistration:
+            criSocket: "unix:///var/run/containerd/containerd.sock"
+            kubeletExtraArgs:
+              node-ip: {{ hostvars[inventory_hostname].cluster_ip }}
+        force: true
+

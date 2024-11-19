@@ -1,0 +1,26 @@
+- name: Install and configure MicroK8s
+  hosts: all
+  become: yes
+  tasks:
+    - name: Check snapd
+      apt:
+        name: snapd
+        state: present
+
+    - name: Install the MicroK8S snap package
+      snap:
+        name: microk8s
+        channel: "1.18/stable"
+        classic: yes
+        state: present
+
+    - name: Configure network for cluster communication
+      lineinfile:
+        path: /var/snap/microk8s/current/args/kubelet
+        line: "--node-ip={{ hostvars[inventory_hostname].cluster_ip }}"
+        create: yes
+
+    - name: Restart MicroK8s
+      service:
+        name: snap.microk8s.daemon-kubelet
+        state: restarted
